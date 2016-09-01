@@ -124,6 +124,8 @@ public class LoadGenerator extends ConfigTestElement implements TestBean, LoopIt
 
   /**
    * Helper for testing outside of JMeter
+   *
+   * @param args command line arguments
    */
   public static void main(String[] args) {
     LoadGenerator generator = new LoadGenerator();
