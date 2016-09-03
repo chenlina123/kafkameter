@@ -19,13 +19,12 @@ This sample JMeter Test Plan can be found in `Tagserve-Kafka.jmx`.
 
 ## Install
 
-Build the extension:
+Build the extension and install the extension into ```$JMETER_HOME/lib/ext```:
 
-    mvn package
-
-Install the extension into `$JMETER_HOME/lib/ext`:
-
-    cp target/kafkameter-x.y.z.jar $JMETER_HOME/lib/ext
+```
+mvn clean package
+cp target/kafkameter-0.2.1.jar $JMETER_HOME/lib/ext
+```
 
 ## Usage
 
@@ -57,120 +56,38 @@ to each Synthetic Load Generator.
 
 A dummy example is useful for demonstrating integration with the Load Generator framework in JMeter.
 
-Create a file called `DummyGenerator.java`:
+Update pom.xml:
 
-    import co.signal.loadgen.SyntheticLoadGenerator;
+```
+<dependency>
+  <groupId>com.github.qin</groupId>
+  <artifactId>kafkameter</artifactId>
+  <version>0.2.1</version>
+</dependency>
+```
 
-    public class DummyGenerator implements SyntheticLoadGenerator {
+Create a file called ```DummyGenerator.java```:
 
-      public DummyGenerator(String ignored) {}
+```
+import co.signal.loadgen.SyntheticLoadGenerator;
 
-      @Override
-      public String nextMessage() {
-        return "Hey! Dum-dum! You give me gum-gum.";
-      }
-    }
+public class DummyGenerator implements SyntheticLoadGenerator {
 
-Now compile this class:
+  public DummyGenerator(String ignored) {}
 
-    javac DummyGenerator.java -classpath target/kafkameter-x.y.z.jar
+  @Override
+  public String nextMessage() {
+    return "Hey! Dum-dum! You give me gum-gum.";
+  }
+}
+```
 
-Package it into a jar:
+Now compile and place the jar into JMeter's ```lib/ext``` directory:
 
-    jar cvf DummyGenerator.jar *.class
-
-Place the jar into JMeter's `lib/ext` directory:
-
-    mv DummyGenerator.jar $JMETER_HOME/lib/ext/
+```
+mvn clean package
+cp target/DummyGenerator.jar $JMETER_HOME/lib/ext/
+```
 
 Now you should see `DummyGenerator` as an option in the Load Generator's "Class Name" drop-down.
 
-#### Realistic Example
-
-This example will use one of [Signal's](signal.co) own domains: tag serving.
-
-Let's say we have a collection of client websites identified by an alphanumeric `siteId`. Each site
-contains a collection of pages identified by a numeric `pageId`. Any given request may match zero
-or more pages. Each page contains a collection of tags identified by a numeric `tagId` which will be
-served whenever the containing page matches. Each request occurs at a particular epoch `timestamp`.
-
-Given this model, we will represent the domain-specific message in JSON as
-
-    {
-      "siteId": <string>,
-      "timestamp": <long>,
-      "pageIds": [<pageId>, ...],
-      "tagIds": [<tagId>, ...]
-    }
-
-We refer to this as a `TagRequestMetrics` message.
-
-The Load Generator will create `TagRequestMetrics` messages according to the distribution
-specified by the example `Synthetic Tagserve Load Description`, described below.
-
-##### Synthetic Tagserve Load Description
-
-The Synthetic Tagserve Load Description has the following format:
-
-    {
-      <siteId>: {
-        "weight": <double>,
-        "pages": {
-            <pageId>: {
-                "weight": <double>,
-                "tags": [<tagId>, ...]
-            }
-        }
-      }
-    }
-
-The weights are used to determine the next `TagRequestMetrics` message for the `KafkaProducerSampler`.
-The weight for a site represents the percentage of total traffic belonging to the site. However,
-the weight for a page represents the probability that the page will be matched in any given request.
-
-Said another way, because `TagRequestMetrics` represents a single site, the weights for the
-different sites must sum to unity. However, a single request can match multiple pages independently,
-so these weights are independent; i.e., they do not have to sum to unity.
-
-##### Synthetic Tagserve Load Algorithm
-
-For each iteration, generate a uniformly random variate between `(0, 1]`. The mapping below would
-represent which site's load configuration to use based on the variate.
-
-    site1: (0.0, 0.6]
-    site2: (0.6, 1.0]
-
-For each page within the load configuration, generate a uniformly random variate between `(0, 1]`.
-Reject any pages with lesser weights. The tags included from each selected page are unioned.
-
-##### Example
-
-For example, given the following Synthetic Load Description
-
-    {
-       "site1": {
-          "weight": 0.6,
-          "pages": {
-              "123": {
-                 "weight": 0.7,
-                 "tags": [123, 567]
-              },
-              "234": {
-                  "weight": 0.1,
-                  "tags": [123, 234, 345, 456]
-              }
-          },
-       },
-       "site2": {
-          "weight": 0.4,
-          "pages": {
-              "123": {
-                 "weight": 0.7,
-                 "tags": [123, 234]
-              }
-          }
-       }
-    }
-
-if the random variates were (0.4, 0.6, 0.05), then we would match the load config for
-"site1" with pages [123, 234] and tags [123, 234, 345, 456, 567].

@@ -81,7 +81,6 @@ public class KafkaProducerSampler extends AbstractJavaSamplerClient {
   @Override
   public void setupTest(JavaSamplerContext context) {
     Properties props = new Properties();
-//    props.put("client.id", "somethingSpecificToThisThread");
     props.put("metadata.broker.list", context.getParameter(PARAMETER_KAFKA_BROKERS));
     props.put("serializer.class", DefaultEncoder.class.getName());
     props.put("key.serializer.class", NullEncoder.class.getName());
