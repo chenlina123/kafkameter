@@ -39,14 +39,15 @@ public class LoadGeneratorBeanInfo extends BeanInfoSupport {
   private static final Logger log = LoggingManager.getLoggerForClass();
 
   private static final String FILENAME = "fileName";
-  private static final String VARIABLE_NAME = "variableName";
+  private static final String KEY_VARIABLE_NAME = "keyVariableName";
+  private static final String VALUE_VARIABLE_NAME = "valueVariableName";
   private static final String CLASS_NAME = "className";
 
   public LoadGeneratorBeanInfo() {
     super(LoadGenerator.class);
 
     createPropertyGroup("load_generator", new String[] {
-        CLASS_NAME, FILENAME, VARIABLE_NAME
+        CLASS_NAME, FILENAME, KEY_VARIABLE_NAME, VALUE_VARIABLE_NAME
     });
 
     List<String> classes = findAvailableImplementations();
@@ -62,7 +63,12 @@ public class LoadGeneratorBeanInfo extends BeanInfoSupport {
     p.setValue(DEFAULT, "");
     p.setValue(NOT_EXPRESSION, Boolean.TRUE);
 
-    p = property(VARIABLE_NAME);
+    p = property(KEY_VARIABLE_NAME);
+    p.setValue(NOT_UNDEFINED, Boolean.TRUE);
+    p.setValue(DEFAULT, "");
+    p.setValue(NOT_EXPRESSION, Boolean.TRUE);
+
+    p = property(VALUE_VARIABLE_NAME);
     p.setValue(NOT_UNDEFINED, Boolean.TRUE);
     p.setValue(DEFAULT, "");
     p.setValue(NOT_EXPRESSION, Boolean.TRUE);

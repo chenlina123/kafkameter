@@ -25,6 +25,7 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Throwables;
 import com.google.common.io.Files;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.jmeter.config.ConfigTestElement;
 import org.apache.jmeter.engine.event.LoopIterationEvent;
 import org.apache.jmeter.engine.event.LoopIterationListener;
@@ -46,7 +47,8 @@ public class LoadGenerator extends ConfigTestElement implements TestBean, LoopIt
   private static final Logger log = LoggingManager.getLoggerForClass();
 
   private String fileName;
-  private String variableName;
+  private String keyVariableName;
+  private String valueVariableName;
   private String className;
 
   private SyntheticLoadGenerator generator;
@@ -57,7 +59,9 @@ public class LoadGenerator extends ConfigTestElement implements TestBean, LoopIt
       generator = createGenerator(getClassName(), readFile(getFileName()));
     }
     JMeterVariables variables = JMeterContextService.getContext().getVariables();
-    variables.put(getVariableName(), generator.nextMessage());
+    Pair<String, String> generatedMessage = generator.nextMessage();
+    variables.put(getKeyVariableName(), generatedMessage.getKey());
+    variables.put(getValueVariableName(), generatedMessage.getValue());
   }
 
   private SyntheticLoadGenerator createGenerator(String className, @Nullable String config) {
@@ -81,17 +85,31 @@ public class LoadGenerator extends ConfigTestElement implements TestBean, LoopIt
   }
 
   /**
-   * @return the variableName
+   * @return the keyVariableName
    */
-  public String getVariableName() {
-    return variableName;
+  public String getKeyVariableName() {
+    return keyVariableName;
   }
 
   /**
-   * @param variableName the variableName to set
+   * @param keyVariableName the keyVariableName to set
    */
-  public void setVariableName(String variableName) {
-    this.variableName = variableName;
+  public void setKeyVariableName(String keyVariableName) {
+    this.keyVariableName = keyVariableName;
+  }
+
+  /**
+   * @return the valueVariableName
+   */
+  public String getValueVariableName() {
+    return valueVariableName;
+  }
+
+  /**
+   * @param valueVariableName the valueVariableName to set
+   */
+  public void setValueVariableName(String valueVariableName) {
+    this.valueVariableName = valueVariableName;
   }
 
   /**
@@ -133,8 +151,9 @@ public class LoadGenerator extends ConfigTestElement implements TestBean, LoopIt
     // Mock out JMeter environment
     JMeterVariables variables = new JMeterVariables();
     JMeterContextService.getContext().setVariables(variables);
-    generator.setFileName("config1.json");
-    generator.setVariableName("kafka_message");
+    generator.setFileName("config.json");
+    generator.setKeyVariableName("kafka_key");
+    generator.setValueVariableName("kafka_message");
 
     generator.iterationStart(null);
 

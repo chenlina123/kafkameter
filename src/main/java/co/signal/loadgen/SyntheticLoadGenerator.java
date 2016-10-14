@@ -15,6 +15,8 @@
  */
 package co.signal.loadgen;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 /**
  * Generates synthetic load specific to an application's input message format and load distribution.
  *
@@ -33,5 +35,5 @@ public interface SyntheticLoadGenerator {
    *
    * @return the next generated message.
    */
-  String nextMessage();
+  Pair<String, String> nextMessage();
 }

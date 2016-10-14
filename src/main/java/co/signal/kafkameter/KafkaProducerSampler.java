@@ -23,7 +23,6 @@ import kafka.javaapi.producer.Producer;
 import kafka.producer.KeyedMessage;
 import kafka.producer.ProducerConfig;
 import kafka.serializer.DefaultEncoder;
-import kafka.serializer.NullEncoder;
 
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
@@ -76,18 +75,18 @@ public class KafkaProducerSampler extends AbstractJavaSamplerClient {
    */
   private static final String PARAMETER_KAFKA_KEY_SERIALIZER = "kafka_key_serializer";
 
-  private Producer<Long, byte[]> producer;
+  private Producer<byte[], byte[]> producer;
 
   @Override
   public void setupTest(JavaSamplerContext context) {
     Properties props = new Properties();
     props.put("metadata.broker.list", context.getParameter(PARAMETER_KAFKA_BROKERS));
     props.put("serializer.class", DefaultEncoder.class.getName());
-    props.put("key.serializer.class", NullEncoder.class.getName());
+    props.put("key.serializer.class", DefaultEncoder.class.getName());
     props.put("request.required.acks", "1");
 
     ProducerConfig config = new ProducerConfig(props);
-    producer = new Producer<Long, byte[]>(config);
+    producer = new Producer<byte[], byte[]>(config);
   }
 
   @Override
@@ -111,11 +110,11 @@ public class KafkaProducerSampler extends AbstractJavaSamplerClient {
   public SampleResult runTest(JavaSamplerContext context) {
     SampleResult result = newSampleResult();
     String topic = context.getParameter(PARAMETER_KAFKA_TOPIC);
-    Long key = context.getLongParameter(PARAMETER_KAFKA_KEY);
+    String key = context.getParameter(PARAMETER_KAFKA_KEY);
     String message = context.getParameter(PARAMETER_KAFKA_MESSAGE);
     sampleResultStart(result, message);
     try {
-      producer.send(new KeyedMessage<Long, byte[]>(topic, key, message.getBytes()));
+      producer.send(new KeyedMessage<byte[], byte[]>(topic, key.getBytes(), message.getBytes()));
       sampleResultSuccess(result, null);
     } catch (Exception e) {
       sampleResultFailed(result, "500", e);
