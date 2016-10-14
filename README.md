@@ -23,7 +23,7 @@ Build the extension and install the extension into ```$JMETER_HOME/lib/ext```:
 
 ```
 mvn clean package
-cp target/kafkameter-0.2.1.jar $JMETER_HOME/lib/ext
+cp target/kafkameter-0.2.2.jar $JMETER_HOME/lib/ext
 ```
 
 ## Usage
@@ -62,13 +62,15 @@ Update pom.xml:
 <dependency>
   <groupId>com.github.qin</groupId>
   <artifactId>kafkameter</artifactId>
-  <version>0.2.1</version>
+  <version>0.2.2</version>
 </dependency>
 ```
 
 Create a file called ```DummyGenerator.java```:
 
 ```
+import org.apache.commons.lang3.tuple.Pair;
+
 import co.signal.loadgen.SyntheticLoadGenerator;
 
 public class DummyGenerator implements SyntheticLoadGenerator {
@@ -76,8 +78,8 @@ public class DummyGenerator implements SyntheticLoadGenerator {
   public DummyGenerator(String ignored) {}
 
   @Override
-  public String nextMessage() {
-    return "Hey! Dum-dum! You give me gum-gum.";
+  public Pair<String, String> nextMessage() {
+    return Pair.of("key", "value");
   }
 }
 ```
@@ -90,4 +92,3 @@ cp target/DummyGenerator.jar $JMETER_HOME/lib/ext/
 ```
 
 Now you should see `DummyGenerator` as an option in the Load Generator's "Class Name" drop-down.
-
