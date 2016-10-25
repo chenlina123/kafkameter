@@ -6,7 +6,7 @@
 
     <groupId>com.github.qin</groupId>
     <artifactId>kafkameter</artifactId>
-    <version>0.2.2</version>
+    <version>0.2.3</version>
 
     <name>kafkameter</name>
     <description>Kafka plugin for JMeter</description>
@@ -110,27 +110,10 @@
         </dependency>
 
         <!-- Kafka Dependencies -->
-
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.8.2</artifactId>
-            <version>0.8.0</version>
-            <exclusions>
-                <!-- XXX Transitively includes log4j 1.2.15 which has bad metadata
-                     http://stackoverflow.com/a/9047963 -->
-                <exclusion>
-                    <groupId>com.sun.jmx</groupId>
-                    <artifactId>jmxri</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.sun.jdmk</groupId>
-                    <artifactId>jmxtools</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.jms</groupId>
-                    <artifactId>jms</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>kafka-clients</artifactId>
+            <version>0.9.0.0</version>
         </dependency>
 
     </dependencies>

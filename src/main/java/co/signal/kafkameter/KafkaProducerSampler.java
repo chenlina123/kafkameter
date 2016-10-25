@@ -19,16 +19,13 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Properties;
 
-import kafka.javaapi.producer.Producer;
-import kafka.producer.KeyedMessage;
-import kafka.producer.ProducerConfig;
-import kafka.serializer.DefaultEncoder;
-
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.protocol.java.sampler.AbstractJavaSamplerClient;
 import org.apache.jmeter.protocol.java.sampler.JavaSamplerContext;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jorphan.logging.LoggingManager;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.log.Logger;
 
 /**
@@ -56,6 +53,11 @@ public class KafkaProducerSampler extends AbstractJavaSamplerClient {
   private static final String PARAMETER_KAFKA_TOPIC = "kafka_topic";
 
   /**
+   * Parameter for setting the Kafka topic partition number.
+   */
+  private static final String PARAMETER_KAFKA_TOPIC_PARTITIONS = "kafka_topic_partitions";
+
+  /**
    * Parameter for setting the Kafka key.
    */
   private static final String PARAMETER_KAFKA_KEY = "kafka_key";
@@ -75,18 +77,16 @@ public class KafkaProducerSampler extends AbstractJavaSamplerClient {
    */
   private static final String PARAMETER_KAFKA_KEY_SERIALIZER = "kafka_key_serializer";
 
-  private Producer<byte[], byte[]> producer;
+  private KafkaProducer<byte[], byte[]> producer;
 
   @Override
   public void setupTest(JavaSamplerContext context) {
     Properties props = new Properties();
-    props.put("metadata.broker.list", context.getParameter(PARAMETER_KAFKA_BROKERS));
-    props.put("serializer.class", DefaultEncoder.class.getName());
-    props.put("key.serializer.class", DefaultEncoder.class.getName());
-    props.put("request.required.acks", "1");
+    props.put("bootstrap.servers", context.getParameter(PARAMETER_KAFKA_BROKERS));
+    props.put("key.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+    props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
-    ProducerConfig config = new ProducerConfig(props);
-    producer = new Producer<byte[], byte[]>(config);
+    producer = new KafkaProducer<byte[], byte[]>(props);
   }
 
   @Override
@@ -99,22 +99,35 @@ public class KafkaProducerSampler extends AbstractJavaSamplerClient {
     Arguments defaultParameters = new Arguments();
     defaultParameters.addArgument(PARAMETER_KAFKA_BROKERS, "${PARAMETER_KAFKA_BROKERS}");
     defaultParameters.addArgument(PARAMETER_KAFKA_TOPIC, "${PARAMETER_KAFKA_TOPIC}");
+    defaultParameters.addArgument(PARAMETER_KAFKA_TOPIC_PARTITIONS, "${PARAMETER_KAFKA_TOPIC_PARTITIONS}");
     defaultParameters.addArgument(PARAMETER_KAFKA_KEY, "${PARAMETER_KAFKA_KEY}");
     defaultParameters.addArgument(PARAMETER_KAFKA_MESSAGE, "${PARAMETER_KAFKA_MESSAGE}");
-    defaultParameters.addArgument(PARAMETER_KAFKA_MESSAGE_SERIALIZER, "kafka.serializer.DefaultEncoder");
-    defaultParameters.addArgument(PARAMETER_KAFKA_KEY_SERIALIZER, "kafka.serializer.NullEncoder");
+    defaultParameters.addArgument(PARAMETER_KAFKA_MESSAGE_SERIALIZER, "org.apache.kafka.common.serialization.ByteArraySerializer");
+    defaultParameters.addArgument(PARAMETER_KAFKA_KEY_SERIALIZER, "org.apache.kafka.common.serialization.ByteArraySerializer");
     return defaultParameters;
   }
 
   @Override
   public SampleResult runTest(JavaSamplerContext context) {
     SampleResult result = newSampleResult();
+
     String topic = context.getParameter(PARAMETER_KAFKA_TOPIC);
+
     String key = context.getParameter(PARAMETER_KAFKA_KEY);
     String message = context.getParameter(PARAMETER_KAFKA_MESSAGE);
+
+    int partitions = Integer.parseInt(
+        context.getParameter(PARAMETER_KAFKA_TOPIC_PARTITIONS));
+    int partition = HashPartitioner.partition(key, partitions);
+
     sampleResultStart(result, message);
     try {
-      producer.send(new KeyedMessage<byte[], byte[]>(topic, key.getBytes(), message.getBytes()));
+      producer.send(
+          new ProducerRecord<byte[], byte[]>(
+              topic,
+              partition,
+              key.getBytes(),
+              message.getBytes()));
       sampleResultSuccess(result, null);
     } catch (Exception e) {
       sampleResultFailed(result, "500", e);
